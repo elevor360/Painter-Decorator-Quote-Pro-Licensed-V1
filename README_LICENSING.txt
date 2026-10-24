@@ -10,3 +10,6 @@ Keep the original V4 repository/backups until you verify the licensed version. D
 Payhip automation is NOT configured for this app yet: the existing Payhip webhook may still be limited to Moving Box Tracker. Test licence activation first.
 
 V1.1: Install App button added to licence activation screen. Existing licence activation and quote features unchanged.
+
+V1.2 INSTALL BUTTON
+The Install App button is on the main app header, visible after successful licence activation, and hidden in standalone installed mode. The activation screen does not contain an Install App button. Chrome's own browser install controls may still appear before activation; protected app features remain gated.
