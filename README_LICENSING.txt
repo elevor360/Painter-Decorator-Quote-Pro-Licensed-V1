@@ -8,3 +8,5 @@ Upload all files from this folder to a GitHub Pages repository root. Use the TES
 Keep the original V4 repository/backups until you verify the licensed version. Do not delete local browser storage: quotes and customer records are stored there. The customer app does not need the Admin Secret.
 
 Payhip automation is NOT configured for this app yet: the existing Payhip webhook may still be limited to Moving Box Tracker. Test licence activation first.
+
+V1.1: Install App button added to licence activation screen. Existing licence activation and quote features unchanged.

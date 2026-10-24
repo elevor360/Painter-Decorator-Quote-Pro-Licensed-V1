@@ -9,9 +9,37 @@ let id=localStorage.getItem(DEVICE);
 if(!id||!/^[-a-zA-Z0-9_]{12,128}$/.test(id)){id='dev_'+Array.from(crypto.getRandomValues(new Uint8Array(20)),v=>chars[v%chars.length]).join('');localStorage.setItem(DEVICE,id)}
 let started=false;
 function start(){if(started)return;started=true;document.getElementById('licenceGate')?.remove();const script=document.createElement('script');script.src='app.js';document.body.appendChild(script)}
-const gate=document.createElement('div');gate.id='licenceGate';gate.style.cssText='position:fixed;inset:0;z-index:999999;background:#10263d;color:white;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif';gate.innerHTML=`<div style="width:min(440px,100%);padding:24px;border-radius:16px;background:#203c58;box-shadow:0 10px 30px #0006"><h2 style="margin-top:0">Elevor360D Painter & Decorator Quote Pro</h2><p>Activate your purchase once using the licence key supplied by the seller. Up to two devices per purchase.</p><label for="licCode">Licence key</label><input id="licCode" autocomplete="off" spellcheck="false" style="box-sizing:border-box;width:100%;padding:12px;margin:8px 0 14px;border-radius:8px;border:1px solid #8ba2b5;color:#111;background:#fff" placeholder="E360-..."><button id="licActivate" style="background:#f5bd46;color:#182636;border:0;border-radius:8px;padding:12px 18px;font-weight:bold;cursor:pointer;width:100%">Activate and open app</button><p id="licMessage" role="status" aria-live="polite" style="min-height:22px"></p><small>Your quotes and customer records stay on this device. Once activated, this version can open offline on this device. Clearing browser storage may require a seller reset.</small></div>`;
+// Capture the install prompt before the licence gate loads the main app.
+let deferredInstallPrompt=null;
+const isInstalled=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+window.addEventListener('beforeinstallprompt',e=>{
+ e.preventDefault();deferredInstallPrompt=e;
+ const button=document.getElementById('licInstall');
+ if(button&&!isInstalled())button.hidden=false;
+});
+window.addEventListener('appinstalled',()=>{
+ deferredInstallPrompt=null;
+ const button=document.getElementById('licInstall');if(button)button.hidden=true;
+ const mainButton=document.getElementById('install');if(mainButton)mainButton.hidden=true;
+});
+const gate=document.createElement('div');gate.id='licenceGate';gate.style.cssText='position:fixed;inset:0;z-index:999999;background:#10263d;color:white;display:flex;align-items:center;justify-content:center;padding:20px;font-family:system-ui,sans-serif';gate.innerHTML=`<div style="width:min(440px,100%);padding:24px;border-radius:16px;background:#203c58;box-shadow:0 10px 30px #0006"><h2 style="margin-top:0">Elevor360D Painter & Decorator Quote Pro</h2><p>Activate your purchase once using the licence key supplied by the seller. Up to two devices per purchase.</p><label for="licCode">Licence key</label><input id="licCode" autocomplete="off" spellcheck="false" style="box-sizing:border-box;width:100%;padding:12px;margin:8px 0 14px;border-radius:8px;border:1px solid #8ba2b5;color:#111;background:#fff" placeholder="E360-..."><button id="licActivate" style="background:#f5bd46;color:#182636;border:0;border-radius:8px;padding:12px 18px;font-weight:bold;cursor:pointer;width:100%">Activate and open app</button><button id="licInstall" type="button" style="background:#d8e6f0;color:#17324d;border:0;border-radius:8px;padding:12px 18px;font-weight:bold;cursor:pointer;width:100%;margin-top:10px">Install App</button><p id="licInstallHelp" style="font-size:13px;line-height:1.5;margin:8px 0 0" hidden></p><p id="licMessage" role="status" aria-live="polite" style="min-height:22px"></p><small>Your quotes and customer records stay on this device. Once activated, this version can open offline on this device. Clearing browser storage may require a seller reset.</small></div>`;
 document.body.appendChild(gate);
 const msg=document.getElementById('licMessage'),inp=document.getElementById('licCode'),btn=document.getElementById('licActivate');
+const installBtn=document.getElementById('licInstall');
+installBtn.hidden=isInstalled();
+installBtn.addEventListener('click',async()=>{
+ if(isInstalled()){installBtn.hidden=true;return}
+ const help=document.getElementById('licInstallHelp');
+ if(deferredInstallPrompt){
+  const p=deferredInstallPrompt;deferredInstallPrompt=null;
+  try{await p.prompt();const choice=await p.userChoice;if(choice&&choice.outcome==='accepted')installBtn.hidden=true}
+  catch(e){help.hidden=false;help.textContent='To install, use the Install icon in Chrome’s address bar.'}
+ }else{
+  help.hidden=false;
+  help.textContent='To install: on a computer, use the Install icon in Chrome’s address bar. On Android, open Chrome’s menu and choose Install app or Add to Home screen. If already installed, open the app from its icon.';
+ }
+});
+
 async function post(path,code){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);try{const r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,appId:APP,deviceId:id}),signal:controller.signal});const data=await r.json();return {status:r.status,data}}finally{clearTimeout(timer)}}
 const saved=()=>{try{return JSON.parse(localStorage.getItem(STORAGE)||'null')}catch{return null}};
 async function check(){
